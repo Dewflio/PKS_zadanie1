@@ -1,5 +1,6 @@
 from scapy.all import *
 from utils import *
+from protocols import *
 
 class Frame:
     def __init__(self, num, bytes):
@@ -62,6 +63,12 @@ class Frame:
             Byte_1 = ieee_3B_str[0:2]
             Byte_2 = ieee_3B_str[2:4]
             return ieee_types_dict[Byte_2]
+    def get_ether2_byte2(self):
+        ieee_3B = self.bytes[14:17]
+        ieee_3B_str = bytes_str_hex(ieee_3B)
+        Byte_2 = ieee_3B_str[2:4]
+        return Byte_2
+
 
     def get_len_medium(self):
         l = self.len
@@ -103,10 +110,33 @@ class Printer:
     def print_frame_type(self, frame):
         print("Frame Type: " + frame.frame_type)
     def print_frame_sub_type(self,frame):
-        print("Frame (Sub) Type: " + frame.frame_sub_type)
+        if frame.inside_len < 512:
+            print("Frame (Sub) Type: " + frame.frame_sub_type)
+        else:
+            print("Embedded protocol: " + frame.frame_sub_type)
+    def print_frame_payload_len(self, frame):
+        if frame.inside_len < 512:
+            print("Length of Payload: " + str(frame.inside_len))
+    def print_point_3(self, dict):
+        print("IPv4 destination addresses:")
+        most = 0
+        max_address = None
+        for i in dict.keys():
+            print("\t" + format_dec_adress(i))
+            if dict[i] > most:
+                most = dict[i]
+                max_address = i
+        print("IPv4 address that received the most packets:")
+        print("\t" + format_dec_adress(max_address) + " received " + str(dict[max_address]) + " packets")
 
 
 
+class Communications:
+    def __init__(self):
+        self.IPv4_packets = []
+        self.IPv6_packets = []
+        self.ARP_packets = []
+        self.HTTP_packets = []
 
 
 
@@ -115,14 +145,51 @@ pcap_file = input("Enter the name of the file to be analysed: ")
 packets = rdpcap_and_close(working_dir + pcap_file)
 frames = []
 printer = Printer()
+comms = Communications()
+
 for i in range(len(packets)):
     frames.append(Frame((i+1), bytes(packets[i])))
     printer.print_frame_number(frames[-1])
     printer.print_frame_type(frames[-1])
     printer.print_frame_sub_type(frames[-1])
+    printer.print_frame_payload_len(frames[-1])
     printer.print_frame_length(frames[-1])
     printer.print_frame_length_medium(frames[-1])
     printer.print_formatted_dst_mac(frames[-1])
     printer.print_formatted_src_mac(frames[-1])
     printer.print_formatted_packet(frames[-1])
     print("")
+
+    if frames[-1].inside_len >= 512:
+        type = frames[-1].len_type
+        type = bytes_str_hex(type)
+
+        if type == "0800":
+            # IPv4
+            new_head = IPv4(frames[-1], 14)
+            comms.IPv4_packets.append(new_head)
+        elif type == "86dd":
+            # IPv6
+            new_head = IPv6(frames[-1], 14)
+            comms.IPv6_packets.append(new_head)
+        elif type == "0806":
+            # ARP
+            new_head = ARP(frames[-1], 14)
+            comms.ARP_packets.append(new_head)
+
+#bod 3 - pocet primacich ipv4 adries
+ipv4_recievers = {}
+for i in comms.IPv4_packets:
+    if i.dst not in ipv4_recievers.keys():
+        ipv4_recievers[i.dst] = 1
+    else:
+        ipv4_recievers[i.dst] += 1
+printer.print_point_3(ipv4_recievers)
+
+#bod 3 - prejde vsetky ipv4 packety, zisti ake maju embeddnute protokoly a prida ich do comms
+for i in comms.IPv4_packets:
+    ipv4_emb_type = i.embedded_protocol
+    ipv4_emb_type = hex_str_to_int(bytes_str_hex(ipv4_emb_type))
+    print(ipv4_types_dict[ipv4_emb_type])
+
+

@@ -24,9 +24,21 @@ def format_hex_adress(adress):
     tmp_str = tmp_str.strip(":")
     return tmp_str
 
+def format_dec_adress(adress):
+    adress = bytes_str_hex(adress)
+    tmp_str = ""
+    for i in range(0, len(adress), 2):
+        splice_str = adress[i:(i+2)]
+        int_addr = int(splice_str, 16)
+        tmp_str += str(int_addr)
+        tmp_str += "."
+    tmp_str = tmp_str.strip(".")
+    return tmp_str
+
 #load type dictionaries for ethernet II, LLC
 ether_types_dict = {}
 ieee_types_dict = {}
+ipv4_types_dict = {}
 with open('ethernet_II_types.txt') as file:
     for line in file:
         line = line.strip()
@@ -39,3 +51,11 @@ with open('LLC_ssaps.txt') as file:
         key = line[0:2]
         value = line[3:len(line)]
         ieee_types_dict[key] = value
+
+with open('ipv4_types.txt') as file:
+    for line in file:
+        line = line.strip().split()
+        key = int(line[0])
+        value = line[1]
+        ipv4_types_dict[key] = value
+
