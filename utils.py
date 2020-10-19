@@ -35,10 +35,36 @@ def format_dec_adress(adress):
     tmp_str = tmp_str.strip(".")
     return tmp_str
 
+def is_fin_true(flags):
+    if flags & 0b00000001:
+        return True
+    else:
+        return False
+
+def is_ack_true(flags):
+    if flags & 0b00010000:
+        return True
+    else:
+        return False
+def is_syn_true(flags):
+    if flags & 0b00000010:
+        return True
+    else:
+        return False
+def is_rst_true(flags):
+    if flags & 0b00000100:
+        return True
+    else:
+        return False
+
 #load type dictionaries for ethernet II, LLC
 ether_types_dict = {}
 ieee_types_dict = {}
 ipv4_types_dict = {}
+tcp_types_dict = {}
+udp_types_dict = {}
+ipv6_types_dict = {}
+icmp_types_dict = {}
 with open('ethernet_II_types.txt') as file:
     for line in file:
         line = line.strip()
@@ -51,11 +77,38 @@ with open('LLC_ssaps.txt') as file:
         key = line[0:2]
         value = line[3:len(line)]
         ieee_types_dict[key] = value
-
 with open('ipv4_types.txt') as file:
     for line in file:
         line = line.strip().split()
         key = int(line[0])
         value = line[1]
         ipv4_types_dict[key] = value
+with open('tcp_types.txt') as file:
+    for line in file:
+        line = line.strip().split()
+        key = int(line[0])
+        value = line[1]
+        tcp_types_dict[key] = value
+with open('udp_types.txt') as file:
+    for line in file:
+        line = line.strip().split()
+        key = int(line[0])
+        value = line[1]
+        udp_types_dict[key] = value
+with open('ipv6_types.txt') as file:
+    for line in file:
+        line = line.strip().split()
+        key = int(line[0])
+        value = line[1]
+        ipv6_types_dict[key] = value
+with open('icmp_types.txt') as file:
+    for line in file:
+        line = line.strip()
+        line_split = line.split()
+        key = int(line_split[0])
+        line_split.pop(0)
+        line_end = " ".join(line_split)
+        value = line_end
+        icmp_types_dict[key] = value
+
 
